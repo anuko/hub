@@ -1,0 +1,35 @@
+Anuko Hub
+
+The goal of this project is to design a simple yet reasonably reliable message delivery mechanism
+for other applications such as Anuko Auction Server or others.
+
+The point is to "network" an otherwise standalone server with similar servers via such hubs.
+
+Servers then obtain a capability to expose their services to users at other locations.
+For example, a user registered with server A can bid on items listed on server B, and so on.
+
+Hub does not know about message content. Therefore, it can connect different types of servers
+together, such as auction servers, freelance job servers, stock photo servers, etc.
+
+
+REDUNDANCY
+
+We aim at achieving some redundancy in the following way:
+- Hubs may use multiple upstream hubs (by configuring them so).
+- Hubs that receive a message attempt to transmit it to its downstream and upstream hubs.
+- Duplicate messages are processed only once by each hub.
+- Undelivered messages are retried a reasonable number of times, then discarded.
+
+
+HUB INITIALIZATION
+
+At startup, a hub should contact upstream nodes and tell them about itself.
+
+
+MESSAGE PROCESSING
+
+- If a message is a duplicate, it is discarded.
+- Hub attempts to deliver the message to localhost.
+- Hub attempts to deliver the message to all upstream and downstream hubs.
+- If all retries to a downstream hub fail, it is deactivated and excluded from further messages,
+until it reactivates itself.
