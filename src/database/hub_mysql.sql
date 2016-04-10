@@ -9,6 +9,9 @@ CREATE TABLE ah_nodes (
   PRIMARY KEY (uuid)
 );
 
+INSERT INTO ah_nodes values('cf9ab125-1968-4149-89f6-47100f3b92bb', 'test node 1', 'localhost:8090');
+INSERT INTO ah_nodes values('008d8fac-3619-4466-8d46-ff9caf22a04b', 'test node 2', 'localhost:8091');
+
 
 # ah_hode_details contains details about this node.
 CREATE TABLE ah_node_details (

@@ -6,6 +6,7 @@
 package mockup;
 
 import java.sql.*;
+import java.util.UUID;
 
 
 /**
@@ -19,16 +20,22 @@ public class Mockup {
      */
     public static void main(String[] args) {
 
+        // Generate random UUIDs - example.
+        // UUID idOne = UUID.randomUUID();
+        // UUID idTwo = UUID.randomUUID();
+        // System.out.println("UUID One: " + idOne);
+        // System.out.println("UUID Two: " + idTwo);
+
         // Experimentation with database access.
         try {
-            String url = "jdbc:mysql://localhost:3306/auctions";
+            String url = "jdbc:mysql://localhost:3306/hub";
             String username = "testuser";
             String password = "topsecret";
 
             Connection conn = DriverManager.getConnection(url, username, password);
 
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT uuid, name FROM as_nodes");
+            ResultSet rs = stmt.executeQuery("SELECT uuid, name FROM ah_nodes");
 
             if (rs.next()) {
                 String uuid = rs.getString(1);

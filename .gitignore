@@ -1,5 +1,5 @@
 todo.txt
-nbproject/
+/src/database/create_db.sh
 /src/mockup/build/
 /src/mockup/dist/
 /src/mockup/nbproject/
