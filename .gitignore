@@ -6,3 +6,7 @@ todo.txt
 /src/mockup/test/
 /src/mockup/build.xml
 /src/mockup/manifest.mf
+/src/hub/nbproject/
+/src/hub/build/
+/src/hub/dist/
+/src/hub/build.xml
