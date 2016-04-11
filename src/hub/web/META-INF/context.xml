@@ -1,2 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="/hub"/>
+<Context path="/hub">
+  <Resource auth="Container" driverClassName="com.mysql.jdbc.Driver" global="jdbc/hub" logAbandoned="true" maxActive="5" maxIdle="1" maxWait="10000" name="jdbc/hub" password="topsecret" removeAbandoned="true" removeAbandonedTimeout="60" testOnBorrow="true" type="javax.sql.DataSource" url="jdbc:mysql://localhost:3306/hub?characterEncoding=utf8&amp;autoReconnect=true" username="testuser" validationInterval="300000" validationQuery="select 1"/>
+</Context>
