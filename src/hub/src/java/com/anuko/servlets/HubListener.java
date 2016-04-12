@@ -5,18 +5,16 @@
  */
 package com.anuko.servlets;
 
-import com.anuko.utils.Data;
+import com.anuko.utils.DatabaseManager;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.sql.DataSource;
 import javax.servlet.ServletContext;
 import java.util.UUID;
 
@@ -40,54 +38,55 @@ public class HubListener implements ServletContextListener {
 
         // Read upstream nodes info.
         Map upstreamNodes = new TreeMap();
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
         try {
-            Connection conn = Data.getConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("select uuid, uri from ah_nodes");
+            conn = DatabaseManager.getConnection();
+            pstmt = conn.prepareStatement("select uuid, uri from ah_nodes");
+            rs = pstmt.executeQuery();
             // For now treat the above set as our upstream nodes, until this product matures.
 
             while (rs.next()) {
                 upstreamNodes.put(rs.getString(1), rs.getString(2));
             }
 
-            rs.close();
-            stmt.close();
-            conn.close();
+            // Add the map to the application context.
+            sce.getServletContext().setAttribute("upstreamNodes", upstreamNodes);
 
-        } catch (Exception e) {
-            System.out.println("Exception caught: " + e.getMessage());
-        }
+            // Insert messages into outgoing queue to ping upstream nodes.
+            Set<String> keys = upstreamNodes.keySet();
+            for(String key : keys){
+                UUID uuid = UUID.randomUUID();
+                String remote = key;
+                // TODO: add created_timestamp.
+                // TODO: add next_try_timestamp.
+                // TODO: add message.
+                // TODO: add status.
 
-        // Add the map to the application context.
-        context = sce.getServletContext();
-        context.setAttribute("upstreamNodes", upstreamNodes);
-
-        // Insert messages into outgoing queue to ping upstream nodes.
-        Set<String> keys = upstreamNodes.keySet();
-        for(String key : keys){
-
-            UUID uuid = UUID.randomUUID();
-            String remote = key;
-            // TODO: add created_timestamp.
-            // TODO: add next_try_timestamp.
-            // TODO: add message.
-            // TODO: add status.
-            String query = "insert into ah_msgs_out (uuid, remote) values('" + uuid + "', '" + remote + "')";
-            // TODO: redo the above as prepared statement.
-
-            try {
-                Connection conn = Data.getConnection();
-                Statement stmt = conn.createStatement();
-                int i = stmt.executeUpdate(query);
-                stmt.close();
-                conn.close();
-
-            } catch (Exception e) {
-                System.out.println("Exception caught: " + e.getMessage());
+                // Determine if we already have a ping message queued.
+                pstmt = conn.prepareStatement("select uuid from ah_msgs_out where remote = ?");
+                pstmt.setString(1, remote);
+                rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                    // No ping message exists in queue, insert.
+                    pstmt = conn.prepareStatement("insert into ah_msgs_out (uuid, remote) values(?, ?)");
+                    pstmt.setString(1, uuid.toString());
+                    pstmt.setString(2, remote);
+                    pstmt.executeUpdate();
+                }
             }
         }
+        catch (SQLException sqle) {
+            System.out.println(sqle.getMessage());
+        }
+        finally {
+            DatabaseManager.closeConnection(rs, pstmt, conn);
+        }
 
-        // TODO: start outgoing message processing thred here.
+        // TODO: start outgoing message processing thread here.
     }
 
     @Override
