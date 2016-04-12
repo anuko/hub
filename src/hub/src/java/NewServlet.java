@@ -13,9 +13,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.sql.*;
+import java.util.Map;
+import java.util.TreeMap;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
+import java.util.Set;
 
 /**
  *
@@ -35,45 +38,7 @@ public class NewServlet extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        String test = "Somethig to display...";
-        
-        // Experimentation with database access.
-        try {
-            //String url = "jdbc:mysql://localhost:3306/hub";
-            //String username = "testuser";
-            //String password = "topsecret";
 
-            //Connection conn = DriverManager.getConnection(url, username, password);
-            
-            
-            String dataSourceName = "java:comp/env/jdbc/hub";
-            Context ctx = new InitialContext();
-            DataSource ds = (DataSource)ctx.lookup(dataSourceName);
-            Connection conn = ds.getConnection();
-            
-
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT uuid, name FROM ah_nodes");
-
-            if (rs.next()) {
-                String uuid = rs.getString(1);
-                String name = rs.getString(2);
-                System.out.println("uuid: " + uuid + ", name: " + name);
-                
-                test += " uuid: " + uuid + ", name: " + name;
-            }
-
-            rs.close();
-            stmt.close();
-            conn.close();
-
-        } catch (Exception e) {
-            System.out.println("Exception caught: " + e.getMessage());
-            test += e.getMessage();
-        }
-        
-        
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
         try {
@@ -85,7 +50,14 @@ public class NewServlet extends HttpServlet {
             out.println("</head>");
             out.println("<body>");
             out.println("<h1>Servlet NewServlet at " + request.getContextPath() + "</h1>");
-            out.println("<p>" + test + "</p>");
+
+            // upstreamNodes is set in HubListener during app initialization.
+            TreeMap upstreamNodes = (TreeMap) request.getServletContext().getAttribute("upstreamNodes");
+            Set<String> keys = upstreamNodes.keySet();
+            for(String key : keys){
+                out.println("<p>Value of "+key+" is: "+upstreamNodes.get(key)+"</p>");
+            }
+
             out.println("</body>");
             out.println("</html>");
         } finally {

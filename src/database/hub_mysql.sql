@@ -53,9 +53,9 @@ CREATE TABLE ah_msgs_in (
 CREATE TABLE ah_msgs_out (
   uuid               CHAR(36)       NOT NULL,   # Random UUID iidentifying the message.
   remote             CHAR(36)       NOT NULL,   # UUID of destination hub.
-  created_timestamp  CHAR(19)       NOT NULL,   # Creation timestamp in format like "2016-04-08 15:00:10".
-  next_try_timestamp CHAR(19)       NOT NULL,   # timestamp when to try to send it out again.
-  message            TEXT           NOT NULL,   # Message.
+  created_timestamp  CHAR(19),                  # Creation timestamp in format like "2016-04-08 15:00:10".
+  next_try_timestamp CHAR(19),                  # timestamp when to try to send it out again.
+  message            TEXT,                      # Message.
   status             INTEGER,                   # Status of the message.
   PRIMARY KEY (uuid)
 );

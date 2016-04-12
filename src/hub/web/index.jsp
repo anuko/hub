@@ -12,7 +12,7 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Hello World!</h1>
-        <h1>Good bye World!</h1>
+        <h1>Anuko Hub</h1>
+        <p>This is work in progress...</h1>
     </body>
 </html>
