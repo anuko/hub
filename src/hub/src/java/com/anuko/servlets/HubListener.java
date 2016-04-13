@@ -17,6 +17,8 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletContext;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Web application lifecycle listener.
@@ -25,6 +27,7 @@ import java.util.UUID;
  */
 public class HubListener implements ServletContextListener {
 
+    private static final Logger Log = LoggerFactory.getLogger(HubListener.class);
     ServletContext context;
 
     @Override
@@ -79,8 +82,8 @@ public class HubListener implements ServletContextListener {
                 }
             }
         }
-        catch (SQLException sqle) {
-            System.out.println(sqle.getMessage());
+        catch (SQLException e) {
+            Log.error(e.getMessage(), e);
         }
         finally {
             DatabaseManager.closeConnection(rs, pstmt, conn);
@@ -91,6 +94,6 @@ public class HubListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        System.out.println(".............. contextDestroyed ........................");
+        Log.info(".............. contextDestroyed ........................");
     }
 }

@@ -13,6 +13,8 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -22,16 +24,18 @@ public class DatabaseManager {
 
     public static String dataSourceName = "java:comp/env/jdbc/hub";
 
+    private static final Logger Log = LoggerFactory.getLogger(DatabaseManager.class);
+
     public static Connection getConnection() throws SQLException {
         try {
             Context ctx = new InitialContext();
             DataSource ds = (DataSource)ctx.lookup(dataSourceName);
             if (ds == null)
-                throw new SQLException("No datasource "+dataSourceName);
+                throw new SQLException("No datasource " + dataSourceName);
             return ds.getConnection();
 
-        } catch (NamingException x) {
-            throw new SQLException("Cannot get datasource "+dataSourceName, x);
+        } catch (NamingException e) {
+            throw new SQLException("Cannot get datasource " + dataSourceName, e);
         }
     }
 
@@ -41,7 +45,7 @@ public class DatabaseManager {
                conn.close();
             }
             catch (Exception e) {
-                System.out.println(e.getMessage());
+                Log.error(e.getMessage(), e);
             }
         }
     }
@@ -52,7 +56,7 @@ public class DatabaseManager {
                     rs.close();
                 }
             catch (SQLException e) {
-                System.out.println(e.getMessage());
+                Log.error(e.getMessage(), e);
             }
         }
     }
@@ -63,7 +67,7 @@ public class DatabaseManager {
                 stmt.close();
             }
             catch (Exception e) {
-                System.out.println(e.getMessage());
+                Log.error(e.getMessage(), e);
             }
         }
     }
