@@ -70,12 +70,12 @@ public class HubListener implements ServletContextListener {
                 // TODO: add status.
 
                 // Determine if we already have a ping message queued.
-                pstmt = conn.prepareStatement("select uuid from ah_msgs_out where remote = ?");
+                pstmt = conn.prepareStatement("select uuid from ah_outbound where remote = ?");
                 pstmt.setString(1, remote);
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
                     // No ping message exists in queue, insert.
-                    pstmt = conn.prepareStatement("insert into ah_msgs_out (uuid, remote) values(?, ?)");
+                    pstmt = conn.prepareStatement("insert into ah_outbound (uuid, remote) values(?, ?)");
                     pstmt.setString(1, uuid.toString());
                     pstmt.setString(2, remote);
                     pstmt.executeUpdate();

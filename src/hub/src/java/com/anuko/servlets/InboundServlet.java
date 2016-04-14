@@ -72,8 +72,8 @@ public class InboundServlet extends HttpServlet {
             // 2) Process a locally attached server.
             // 3) Insert into outbound queue for further processing.
 
-            // Check if we already processed this message. We do so by inserting a row into ah_msgs_in.
-            pstmt = conn.prepareStatement("insert into ah_msgs_in (uuid) values(?)");
+            // Check if we already processed this message. We do so by inserting a row into ah_inbound.
+            pstmt = conn.prepareStatement("insert into ah_inbound (uuid) values(?)");
             pstmt.setString(1, uuid);
             int inserted = 0;
             try {

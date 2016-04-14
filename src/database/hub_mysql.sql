@@ -34,9 +34,9 @@ CREATE TABLE ah_downstream (
 );
 
 
-# ah_msgs_in contains messages from network received during previous 24 hours.
+# ah_inbound contains messages from network received during previous 24 hours.
 # This table is used to filter out redundant messages to process each only once.
-CREATE TABLE ah_msgs_in (
+CREATE TABLE ah_inbound (
   uuid               CHAR(36)       NOT NULL,   # UUID iidentifying the message.
   origin             CHAR(36),                  # UUID of the node the message is from.
   created_timestamp  CHAR(19),                  # Creation timestamp in format like "2016-04-08 15:00:10".
@@ -47,10 +47,10 @@ CREATE TABLE ah_msgs_in (
 # TODO: add index by timestamp.
 
 
-# ah_msgs_out is our outgoing message queue.
+# ah_outbound is our outgoing message queue.
 # Successfully sent messages are removed from this table.
 # Messages not yet sent, or not delivered due to failure stay here for a few retries.
-CREATE TABLE ah_msgs_out (
+CREATE TABLE ah_outbound (
   uuid               CHAR(36)       NOT NULL,   # Random UUID iidentifying the message.
   remote             CHAR(36)       NOT NULL,   # UUID of destination hub.
   created_timestamp  CHAR(19),                  # Creation timestamp in format like "2016-04-08 15:00:10".
