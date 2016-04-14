@@ -6,6 +6,7 @@
 package com.anuko.servlets;
 
 import com.anuko.utils.DatabaseManager;
+import com.anuko.utils.SQLUtil;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
@@ -22,6 +23,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -46,10 +50,22 @@ public class InboundServlet extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
 
+        // Inbound servlet is used to process messages that come in.
+        // What we need to do:
+        //   1) Check if message was already processed. Abort if so.
+        //   2) Insert messages in outbound queue:
+        //     2.1) For all upstream nodes.
+        //     2.2) For all downstream nodes.
+
         // Obtain and verify message parameters.
         String uuid = request.getParameter("uuid");
         if (!UUIDUtil.isUUID(uuid)) {
             Log.error("Invalid UUID: " + uuid);
+            return;
+        }
+        String local = request.getParameter("local");
+        if (!UUIDUtil.isUUID(local)) {
+            Log.error("Invalid UUID: " + local);
             return;
         }
         String remote = request.getParameter("remote");
@@ -58,6 +74,7 @@ public class InboundServlet extends HttpServlet {
             return;
         }
         String message = request.getParameter("message");
+        int type = request.getParameter("type") == null ? 0 : Integer.parseInt(request.getParameter("type"));
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -66,33 +83,61 @@ public class InboundServlet extends HttpServlet {
         try {
             conn = DatabaseManager.getConnection();
 
-            // TODO: document steps.
-            // For example:
-            // 1) Check if message was already processed.
-            // 2) Process a locally attached server.
-            // 3) Insert into outbound queue for further processing.
+            // Is this message from a downstream node? If so, we need to update its status.
+            if (isDownstream(request, local) && !isNodeActive(request, local)) {
+                activateNode(request, local);
+            }
+            // Was the message a ping? No further processing for pings.
+            if (type == 0)
+                return;
 
             // Check if we already processed this message. We do so by inserting a row into ah_inbound.
             pstmt = conn.prepareStatement("insert into ah_inbound (uuid) values(?)");
             pstmt.setString(1, uuid);
             int inserted = 0;
-            try {
-                inserted = pstmt.executeUpdate();
-            }
-            catch (SQLException e) {
-                // This is normal when we attempt to insert a duplicate row.
-            }
+            try { inserted = pstmt.executeUpdate(); }
+            catch (SQLException e) { /* This is normal when we try to insert a duplicate row. */ }
             if (inserted == 0) {
                 Log.info("Message " + uuid + " is already processed.");
                 return;
             }
 
-            // TODO: do processing for a locally attached server. How?
+            Log.info("Processing incomig message: " + uuid + ".");
 
-            Log.info("Message " + uuid + " is NOT already processed.");
-            // TODO: this is work in progress. Add other code here.
+            // Insert messages in outbound queue for all upstream nodes.
+            TreeMap upstreamNodes = (TreeMap) request.getServletContext().getAttribute("upstreamNodes");
+            Set<String> keys = upstreamNodes.keySet();
+            for (String key : keys) {
 
+                // TODO: add created_timestamp.
+                // TODO: add next_try_timestamp.
+                // TODO: add message.
+                // TODO: add status.
 
+                pstmt = conn.prepareStatement("insert into ah_outbound (uuid, remote) values(?, ?)");
+                pstmt.setString(1, uuid);
+                pstmt.setString(2, key);
+                pstmt.executeUpdate();
+            }
+
+            // Insert messages in outbound queue for all downstream nodes.
+            TreeMap downstreamNodes = (TreeMap) request.getServletContext().getAttribute("downstreamNodes");
+            keys = downstreamNodes.keySet();
+            for (String key : keys) {
+
+                // TODO: add created_timestamp.
+                // TODO: add next_try_timestamp.
+                // TODO: add message.
+                // TODO: add status.
+
+                pstmt = conn.prepareStatement("insert into ah_outbound (uuid, remote) values(?, ?)");
+                pstmt.setString(1, uuid);
+                pstmt.setString(2, key);
+                pstmt.executeUpdate();
+            }
+
+            // Clean up ah_inbound table from old messages.
+            // TODO: to clean we need to have the dates...
         }
         catch (SQLException e) {
             Log.error(e.getMessage(), e);
@@ -120,6 +165,61 @@ public class InboundServlet extends HttpServlet {
             out.println("</html>");
         } finally {
             out.close();
+        }
+    }
+
+    boolean isDownstream(HttpServletRequest request, String uuid) {
+        TreeMap downstreamNodes = (TreeMap) request.getServletContext().getAttribute("downstreamNodes");
+        Set<String> keys = downstreamNodes.keySet();
+        for (String key : keys) {
+            if (key.equals(uuid))
+                return true;
+        }
+        return false;
+    }
+
+    boolean isNodeActive(HttpServletRequest request, String uuid) {
+        TreeMap downstreamNodes = (TreeMap) request.getServletContext().getAttribute("downstreamNodes");
+        HashMap<String, String> map = (HashMap) downstreamNodes.get(uuid);
+        String status = map.get("status");
+        if (status != null && status.equals("1")) {
+            return true;
+        }
+        return false;
+    }
+
+    void activateNode(HttpServletRequest request, String uuid) {
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // Activate node in the database.
+            conn = DatabaseManager.getConnection();
+            pstmt = conn.prepareStatement("update ah_downstream set status = 1 where uuid = ?");
+            pstmt.setString(1, uuid);
+            pstmt.executeUpdate();
+
+            // Activate node in downstreamNodes map.
+            activateNode((TreeMap)request.getServletContext().getAttribute("downstreamNodes"), uuid);
+        }
+        catch (SQLException e) {
+            Log.error(e.getMessage(), e);
+        }
+        finally {
+            DatabaseManager.closeConnection(rs, pstmt, conn);
+        }
+    }
+
+    void activateNode(TreeMap downstreamNodes, String uuid) {
+        Set<String> keys = downstreamNodes.keySet();
+        for (String key : keys) {
+            if (key.equals(uuid)) {
+                HashMap m = (HashMap) downstreamNodes.get(key);
+                m.put("status", "1");
+                return;
+            }
         }
     }
 

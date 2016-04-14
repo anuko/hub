@@ -6,6 +6,7 @@
 package com.anuko.servlets;
 
 import com.anuko.utils.DatabaseManager;
+import com.anuko.utils.SQLUtil;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
@@ -13,6 +14,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.HashMap;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletContext;
@@ -41,6 +43,7 @@ public class HubListener implements ServletContextListener {
 
         // Read upstream nodes info.
         Map upstreamNodes = new TreeMap();
+        Map downstreamNodes = new TreeMap();
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -48,9 +51,8 @@ public class HubListener implements ServletContextListener {
 
         try {
             conn = DatabaseManager.getConnection();
-            pstmt = conn.prepareStatement("select uuid, uri from ah_nodes");
+            pstmt = conn.prepareStatement("select uuid, uri from ah_upstream");
             rs = pstmt.executeQuery();
-            // For now treat the above set as our upstream nodes, until this product matures.
 
             while (rs.next()) {
                 upstreamNodes.put(rs.getString(1), rs.getString(2));
@@ -61,7 +63,7 @@ public class HubListener implements ServletContextListener {
 
             // Insert messages into outgoing queue to ping upstream nodes.
             Set<String> keys = upstreamNodes.keySet();
-            for(String key : keys){
+            for (String key : keys) {
                 UUID uuid = UUID.randomUUID();
                 String remote = key;
                 // TODO: add created_timestamp.
@@ -81,6 +83,16 @@ public class HubListener implements ServletContextListener {
                     pstmt.executeUpdate();
                 }
             }
+
+            pstmt = conn.prepareStatement("select uuid, type, name, uri, status from ah_downstream");
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                HashMap<String, String> map = SQLUtil.rowToMap(rs);
+                downstreamNodes.put(rs.getString(1), map);
+            }
+            // Add the map to the application context.
+            sce.getServletContext().setAttribute("downstreamNodes", downstreamNodes);
         }
         catch (SQLException e) {
             Log.error(e.getMessage(), e);

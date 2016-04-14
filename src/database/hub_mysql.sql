@@ -1,21 +1,21 @@
 # MySQL-specific code to create tables for hub.
 
 
-# ah_nodes contains nodes this node can connect to.
-CREATE TABLE ah_nodes (
+# ah_upstream contains upstream nodes this node is configured to talk to.
+CREATE TABLE ah_upstream (
   uuid               CHAR(36)       NOT NULL,   # UUID identifying a node.
   name               VARCHAR(64)    NOT NULL,   # Node name.
   uri                VARCHAR(256),              # URI at which the node is available.
   PRIMARY KEY (uuid)
 );
 
-INSERT INTO ah_nodes values('cf9ab125-1968-4149-89f6-47100f3b92bb', 'test node 1', 'localhost:8090');
-INSERT INTO ah_nodes values('008d8fac-3619-4466-8d46-ff9caf22a04b', 'test node 2', 'localhost:8091');
+INSERT INTO ah_upstream values('cf9ab125-1968-4149-89f6-47100f3b92bb', 'test node 1', 'localhost:8090');
+INSERT INTO ah_upstream values('008d8fac-3619-4466-8d46-ff9caf22a04b', 'test node 2', 'localhost:8091');
 
 
 # ah_hode_details contains details about this node.
 CREATE TABLE ah_node_details (
-  uuid               CHAR(36)       NOT NULL,   # UUID identifying this auction site.
+  uuid               CHAR(36)       NOT NULL,   # UUID identifying this node.
   type               INTEGER,                   # Note type: site, hub, or root hub.
   name               VARCHAR(64)    NOT NULL,   # Name for this site.
   uri                VARCHAR(256),              # URI at which the server is available to its users.
@@ -23,7 +23,7 @@ CREATE TABLE ah_node_details (
 );
 
 
-# ah_downstream contains downstream nodes that this node talks with.
+# ah_downstream contains downstream nodes that this node talks with. Locally attached servers are in here too.
 CREATE TABLE ah_downstream (
   uuid               CHAR(36)     NOT NULL,     # Node UUID.
   type               INTEGER,                   # Node type: site or hub.
@@ -32,6 +32,8 @@ CREATE TABLE ah_downstream (
   status             INTEGER,                   # Node status.
   PRIMARY KEY (uuid)
 );
+
+INSERT INTO ah_downstream values('51431704-fe3f-4d93-a0ad-c853d0a39e47', 0, 'Local Auction Server', 'localhost:8099', 0);
 
 
 # ah_inbound contains messages from network received during previous 24 hours.
@@ -56,7 +58,6 @@ CREATE TABLE ah_outbound (
   created_timestamp  CHAR(19),                  # Creation timestamp in format like "2016-04-08 15:00:10".
   next_try_timestamp CHAR(19),                  # timestamp when to try to send it out again.
   message            TEXT,                      # Message.
-  status             INTEGER,                   # Status of the message.
-  PRIMARY KEY (uuid)
+  status             INTEGER                    # Status of the message.
 );
 
