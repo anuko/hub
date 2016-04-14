@@ -38,9 +38,9 @@ CREATE TABLE ah_downstream (
 # This table is used to filter out redundant messages to process each only once.
 CREATE TABLE ah_msgs_in (
   uuid               CHAR(36)       NOT NULL,   # UUID iidentifying the message.
-  origin             CHAR(36)       NOT NULL,   # UUID of the node the message is from.
-  created_timestamp  CHAR(19)       NOT NULL,   # Creation timestamp in format like "2016-04-08 15:00:10".
-  message            TEXT           NOT NULL,   # Message.
+  origin             CHAR(36),                  # UUID of the node the message is from.
+  created_timestamp  CHAR(19),                  # Creation timestamp in format like "2016-04-08 15:00:10".
+  message            TEXT,                      # Message.
   status             INTEGER,                   # Status of the message
   PRIMARY KEY (uuid)
 );

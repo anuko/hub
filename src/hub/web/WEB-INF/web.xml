@@ -4,6 +4,14 @@
         <description>ServletContextListener</description>
         <listener-class>com.anuko.servlets.HubListener</listener-class>
     </listener>
+    <servlet>
+        <servlet-name>InboundServlet</servlet-name>
+        <servlet-class>com.anuko.servlets.InboundServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>InboundServlet</servlet-name>
+        <url-pattern>/in</url-pattern>
+    </servlet-mapping>
     <session-config>
         <session-timeout>
             30
