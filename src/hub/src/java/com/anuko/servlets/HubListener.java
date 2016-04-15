@@ -7,6 +7,7 @@ package com.anuko.servlets;
 
 import com.anuko.utils.DatabaseManager;
 import com.anuko.utils.SQLUtil;
+import com.anuko.utils.OutboundThread;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
@@ -39,6 +40,7 @@ public class HubListener implements ServletContextListener {
     private static final Logger Log = LoggerFactory.getLogger(HubListener.class);
     ServletContext context;
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    Thread outboundThread = new Thread(new OutboundThread());
 
     /**
      * Initializes Hub application as a whole.
@@ -89,8 +91,8 @@ public class HubListener implements ServletContextListener {
                 if (!rs.next()) {
                     // No ping message exists in queue, insert.
                     pstmt = conn.prepareStatement("insert into ah_outbound " +
-                        "(uuid, remote, created_timestamp, next_try_timestamp, type, status) " +
-                        "values(?, ?, ?, ?, 0, 0)");
+                        "(uuid, remote, created_timestamp, next_try_timestamp, type, attempts, status) " +
+                        "values(?, ?, ?, ?, 0, 0, 0)");
                     pstmt.setString(1, uuid.toString());
                     pstmt.setString(2, remote);
                     pstmt.setString(3, created_timestamp);
@@ -116,15 +118,17 @@ public class HubListener implements ServletContextListener {
             DatabaseManager.closeConnection(rs, pstmt, conn);
         }
 
-        // TODO: start outgoing message processing thread here.
+        // Start outgoing message processing thread.
+        outboundThread.start();
     }
 
     /**
-     * Does nothing.
+     * Does cleanup before application exit.
      *
      * @param sce the ServletContextEvent containing the ServletContext that is being destroyed.
      */
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
+        outboundThread.interrupt();
     }
 }

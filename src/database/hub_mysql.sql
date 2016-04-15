@@ -60,6 +60,7 @@ CREATE TABLE ah_outbound (
   next_try_timestamp CHAR(19),                  # timestamp when to try to send it out again.
   message            TEXT,                      # Message.
   type               INTEGER,                   # Message type.
+  attempts           INTEGER,                   # Number of unsuccessful delivery attempts.
   status             INTEGER                    # Status of the message.
 );
 

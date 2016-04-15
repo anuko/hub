@@ -123,8 +123,8 @@ public class InboundServlet extends HttpServlet {
             Set<String> keys = upstreamNodes.keySet();
             for (String key : keys) {
                 pstmt = conn.prepareStatement("insert into ah_outbound " +
-                    "(uuid, remote, created_timestamp, next_try_timestamp, message, type, status) " +
-                    "values(?, ?, ?, ?, ?, ?, 0)");
+                    "(uuid, remote, created_timestamp, next_try_timestamp, message, type, attempts, status) " +
+                    "values(?, ?, ?, ?, ?, ?, 0, 0)");
                 pstmt.setString(1, uuid);
                 pstmt.setString(2, key);
                 pstmt.setString(3, created_timestamp);
