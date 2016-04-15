@@ -67,9 +67,9 @@ public class InboundServlet extends HttpServlet {
             Log.error("Invalid UUID: " + uuid);
             return;
         }
-        String local = request.getParameter("local");
-        if (!UUIDUtil.isUUID(local)) {
-            Log.error("Invalid UUID: " + local);
+        String origin = request.getParameter("origin");
+        if (!UUIDUtil.isUUID(origin)) {
+            Log.error("Invalid UUID: " + origin);
             return;
         }
         String remote = request.getParameter("remote");
@@ -88,8 +88,8 @@ public class InboundServlet extends HttpServlet {
             conn = DatabaseManager.getConnection();
 
             // Is this message from a downstream node? If so, we need to update its status.
-            if (isDownstream(request, local) && !isNodeActive(request, local)) {
-                activateNode(request, local);
+            if (isDownstream(request, origin) && !isNodeActive(request, origin)) {
+                activateNode(request, origin);
             }
             // Was the message a ping? No further processing for pings.
             if (type == 0)
@@ -103,7 +103,7 @@ public class InboundServlet extends HttpServlet {
                 "(uuid, origin, created_timestamp, message, type, status) " +
                 "values(?, ?, ?, ?, ?, 0)");
             pstmt.setString(1, uuid);
-            pstmt.setString(2, local);
+            pstmt.setString(2, origin);
             pstmt.setString(3, created_timestamp);
             pstmt.setString(4, message);
             pstmt.setInt(5, type);

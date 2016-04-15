@@ -24,10 +24,15 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+
 /**
- * Web application lifecycle listener.
+ * Hub application listener.
+ * Its methods are called during application initialization and destruction.
+ * We use the contextInitialized call to initialize the application.
+ * Here, we determine who our upstream and downstream nodes are
+ * and put this information in application context for further use.
  *
- * @author nik
+ * @author Nik Okuntseff
  */
 public class HubListener implements ServletContextListener {
 
@@ -35,6 +40,11 @@ public class HubListener implements ServletContextListener {
     ServletContext context;
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     * Initializes Hub application as a whole.
+     *
+     * @param sce the ServletContextEvent containing the ServletContext that is being initialized.
+     */
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         // We get here when the application initializes.
@@ -109,8 +119,12 @@ public class HubListener implements ServletContextListener {
         // TODO: start outgoing message processing thread here.
     }
 
+    /**
+     * Does nothing.
+     *
+     * @param sce the ServletContextEvent containing the ServletContext that is being destroyed.
+     */
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        Log.info(".............. contextDestroyed ........................");
     }
 }
