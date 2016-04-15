@@ -21,6 +21,8 @@ import javax.servlet.ServletContext;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Web application lifecycle listener.
@@ -31,6 +33,7 @@ public class HubListener implements ServletContextListener {
 
     private static final Logger Log = LoggerFactory.getLogger(HubListener.class);
     ServletContext context;
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -66,10 +69,8 @@ public class HubListener implements ServletContextListener {
             for (String key : keys) {
                 UUID uuid = UUID.randomUUID();
                 String remote = key;
-                // TODO: add created_timestamp.
-                // TODO: add next_try_timestamp.
-                // TODO: add message.
-                // TODO: add status.
+                Date now = new Date();
+                String created_timestamp = sdf.format(now);
 
                 // Determine if we already have a ping message queued.
                 pstmt = conn.prepareStatement("select uuid from ah_outbound where remote = ?");
@@ -77,9 +78,13 @@ public class HubListener implements ServletContextListener {
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
                     // No ping message exists in queue, insert.
-                    pstmt = conn.prepareStatement("insert into ah_outbound (uuid, remote) values(?, ?)");
+                    pstmt = conn.prepareStatement("insert into ah_outbound " +
+                        "(uuid, remote, created_timestamp, next_try_timestamp, type, status) " +
+                        "values(?, ?, ?, ?, 0, 0)");
                     pstmt.setString(1, uuid.toString());
                     pstmt.setString(2, remote);
+                    pstmt.setString(3, created_timestamp);
+                    pstmt.setString(4, created_timestamp);
                     pstmt.executeUpdate();
                 }
             }

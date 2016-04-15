@@ -43,6 +43,7 @@ CREATE TABLE ah_inbound (
   origin             CHAR(36),                  # UUID of the node the message is from.
   created_timestamp  CHAR(19),                  # Creation timestamp in format like "2016-04-08 15:00:10".
   message            TEXT,                      # Message.
+  type               INTEGER,                   # Message type.
   status             INTEGER,                   # Status of the message
   PRIMARY KEY (uuid)
 );
@@ -58,6 +59,7 @@ CREATE TABLE ah_outbound (
   created_timestamp  CHAR(19),                  # Creation timestamp in format like "2016-04-08 15:00:10".
   next_try_timestamp CHAR(19),                  # timestamp when to try to send it out again.
   message            TEXT,                      # Message.
+  type               INTEGER,                   # Message type.
   status             INTEGER                    # Status of the message.
 );
 

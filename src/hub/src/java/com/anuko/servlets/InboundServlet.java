@@ -22,11 +22,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Calendar;
 
 /**
  *
@@ -36,6 +39,7 @@ import java.util.UUID;
 public class InboundServlet extends HttpServlet {
 
     private static final Logger Log = LoggerFactory.getLogger(InboundServlet.class);
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -91,9 +95,19 @@ public class InboundServlet extends HttpServlet {
             if (type == 0)
                 return;
 
+            Date now = new Date();
+            String created_timestamp = sdf.format(now);
+
             // Check if we already processed this message. We do so by inserting a row into ah_inbound.
-            pstmt = conn.prepareStatement("insert into ah_inbound (uuid) values(?)");
+            pstmt = conn.prepareStatement("insert into ah_inbound " +
+                "(uuid, origin, created_timestamp, message, type, status) " +
+                "values(?, ?, ?, ?, ?, 0)");
             pstmt.setString(1, uuid);
+            pstmt.setString(2, local);
+            pstmt.setString(3, created_timestamp);
+            pstmt.setString(4, message);
+            pstmt.setInt(5, type);
+
             int inserted = 0;
             try { inserted = pstmt.executeUpdate(); }
             catch (SQLException e) { /* This is normal when we try to insert a duplicate row. */ }
@@ -108,15 +122,15 @@ public class InboundServlet extends HttpServlet {
             TreeMap upstreamNodes = (TreeMap) request.getServletContext().getAttribute("upstreamNodes");
             Set<String> keys = upstreamNodes.keySet();
             for (String key : keys) {
-
-                // TODO: add created_timestamp.
-                // TODO: add next_try_timestamp.
-                // TODO: add message.
-                // TODO: add status.
-
-                pstmt = conn.prepareStatement("insert into ah_outbound (uuid, remote) values(?, ?)");
+                pstmt = conn.prepareStatement("insert into ah_outbound " +
+                    "(uuid, remote, created_timestamp, next_try_timestamp, message, type, status) " +
+                    "values(?, ?, ?, ?, ?, ?, 0)");
                 pstmt.setString(1, uuid);
                 pstmt.setString(2, key);
+                pstmt.setString(3, created_timestamp);
+                pstmt.setString(4, created_timestamp);
+                pstmt.setString(5, message);
+                pstmt.setInt(6, type);
                 pstmt.executeUpdate();
             }
 
@@ -124,20 +138,24 @@ public class InboundServlet extends HttpServlet {
             TreeMap downstreamNodes = (TreeMap) request.getServletContext().getAttribute("downstreamNodes");
             keys = downstreamNodes.keySet();
             for (String key : keys) {
-
-                // TODO: add created_timestamp.
-                // TODO: add next_try_timestamp.
-                // TODO: add message.
-                // TODO: add status.
-
-                pstmt = conn.prepareStatement("insert into ah_outbound (uuid, remote) values(?, ?)");
                 pstmt.setString(1, uuid);
                 pstmt.setString(2, key);
+                pstmt.setString(3, created_timestamp);
+                pstmt.setString(4, created_timestamp);
+                pstmt.setString(5, message);
+                pstmt.setInt(6, type);
                 pstmt.executeUpdate();
             }
 
             // Clean up ah_inbound table from old messages.
-            // TODO: to clean we need to have the dates...
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.DATE, -1);
+            Date cutoff = new Date(c.getTimeInMillis());
+            String cutoff_date = sdf.format(cutoff);
+
+            pstmt = conn.prepareStatement("delete from ah_inbound where created_timestamp < ?");
+            pstmt.setString(1, cutoff_date);
+            pstmt.executeUpdate();
         }
         catch (SQLException e) {
             Log.error(e.getMessage(), e);
