@@ -1,5 +1,4 @@
-Anuko Time Tracker
-
+/*
 Copyright Anuko International Ltd. (https://www.anuko.com)
 
 LIBERAL FREEWARE LICENSE: This source code document may be used
@@ -17,4 +16,5 @@ There are only two ways to violate the license:
    not the work of the original author(s).
 
 This license applies to this document only, not any other software that it
-may be combined with. 
+may be combined with.
+*/
