@@ -47,13 +47,12 @@ public class HubListener implements ServletContextListener {
         // We get here when the application initializes.
         // We do our application initialization steps here.
         // Specifically:
-        //   1) Read upstream nodes info.
+        //   1) Read nodes info.
         //   2) Put it into application servlet context for further use.
         //   3) Insert messages into outgoing queue to ping upstream nodes.
 
-        // Read upstream nodes info.
-        Map upstreamNodes = new TreeMap();
-        Map downstreamNodes = new TreeMap();
+        // Read nodes info.
+        Map nodes = new TreeMap();
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -61,19 +60,23 @@ public class HubListener implements ServletContextListener {
 
         try {
             conn = DatabaseManager.getConnection();
-            pstmt = conn.prepareStatement("select uuid, uri from ah_upstream");
+            pstmt = conn.prepareStatement("select uuid, type, name, uri, status from ah_nodes");
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                upstreamNodes.put(rs.getString(1), rs.getString(2));
+                HashMap<String, String> map = SQLUtil.rowToMap(rs);
+                nodes.put(rs.getString(1), map);
             }
-
             // Add the map to the application context.
-            sce.getServletContext().setAttribute("upstreamNodes", upstreamNodes);
+            sce.getServletContext().setAttribute("nodes", nodes);
 
             // Insert messages into outgoing queue to ping upstream nodes.
-            Set<String> keys = upstreamNodes.keySet();
+            Set<String> keys = nodes.keySet();
             for (String key : keys) {
+                HashMap<String, String> m = (HashMap) nodes.get(key);
+                boolean upstream = (m.get("type") != null && m.get("type").equals("1"));
+                if (!upstream) continue;
+
                 UUID uuid = UUID.randomUUID();
                 String remote = key;
                 Date now = new Date();
@@ -84,7 +87,7 @@ public class HubListener implements ServletContextListener {
                 pstmt.setString(1, remote);
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
-                    // No ping message exists in queue, insert.
+                    // No previous ping message exists, insert.
                     pstmt = conn.prepareStatement("insert into ah_outbound " +
                         "(uuid, remote, created_timestamp, next_try_timestamp, type, attempts, status) " +
                         "values(?, ?, ?, ?, 0, 0, 0)");
@@ -95,16 +98,6 @@ public class HubListener implements ServletContextListener {
                     pstmt.executeUpdate();
                 }
             }
-
-            pstmt = conn.prepareStatement("select uuid, type, name, uri, status from ah_downstream");
-            rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                HashMap<String, String> map = SQLUtil.rowToMap(rs);
-                downstreamNodes.put(rs.getString(1), map);
-            }
-            // Add the map to the application context.
-            sce.getServletContext().setAttribute("downstreamNodes", downstreamNodes);
         }
         catch (SQLException e) {
             Log.error(e.getMessage(), e);

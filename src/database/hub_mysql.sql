@@ -1,19 +1,7 @@
 # MySQL-specific code to create tables for hub.
 
 
-# ah_upstream contains upstream nodes this node is configured to talk to.
-CREATE TABLE ah_upstream (
-  uuid               CHAR(36)       NOT NULL,   # UUID identifying a node.
-  name               VARCHAR(64)    NOT NULL,   # Node name.
-  uri                VARCHAR(256),              # URI at which the node is available.
-  PRIMARY KEY (uuid)
-);
-
-INSERT INTO ah_upstream values('cf9ab125-1968-4149-89f6-47100f3b92bb', 'test node 1', 'localhost:8090');
-INSERT INTO ah_upstream values('008d8fac-3619-4466-8d46-ff9caf22a04b', 'test node 2', 'localhost:8091');
-
-
-# ah_hode_details contains details about this node.
+# ah_node_details contains details about this node.
 CREATE TABLE ah_node_details (
   uuid               CHAR(36)       NOT NULL,   # UUID identifying this node.
   type               INTEGER,                   # Note type: site, hub, or root hub.
@@ -23,17 +11,22 @@ CREATE TABLE ah_node_details (
 );
 
 
-# ah_downstream contains downstream nodes that this node talks with. Locally attached servers are in here too.
-CREATE TABLE ah_downstream (
+# ah_nodes contains nodes that this node talks with.
+# They are upstream nodes, downstream nodes, and locally attached servers.
+CREATE TABLE ah_nodes (
   uuid               CHAR(36)     NOT NULL,     # Node UUID.
-  type               INTEGER,                   # Node type: site or hub.
+  type               INTEGER,                   # Node type: localhost (NULL), downstream (0), or upstream(1).
   name               VARCHAR(64)  NOT NULL,     # Node name.
   uri                VARCHAR(256) NOT NULL,     # Node URI.
   status             INTEGER,                   # Node status.
   PRIMARY KEY (uuid)
 );
 
-INSERT INTO ah_downstream values('51431704-fe3f-4d93-a0ad-c853d0a39e47', 0, 'Local Auction Server', 'localhost:8099', 0);
+# Insert default upstream nodes.
+INSERT INTO ah_nodes values('cf9ab125-1968-4149-89f6-47100f3b92bb', 1, 'test node 1', 'localhost:8090', 1);
+INSERT INTO ah_nodes values('008d8fac-3619-4466-8d46-ff9caf22a04b', 1, 'test node 2', 'localhost:8091', 1);
+# Inserat default localhost.
+INSERT INTO ah_nodes values('51431704-fe3f-4d93-a0ad-c853d0a39e47', NULL, 'Local Auction Server', 'localhost:8099', 1);
 
 
 # ah_inbound contains messages from network received during previous 24 hours.

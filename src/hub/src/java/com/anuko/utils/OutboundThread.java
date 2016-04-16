@@ -26,7 +26,7 @@ public class OutboundThread implements Runnable {
     @Override
     public void run() {
 
-        while (!Thread.interrupted()) {
+        while (!Thread.currentThread().isInterrupted()) {
 
             Connection conn = null;
             PreparedStatement pstmt = null;
@@ -45,9 +45,11 @@ public class OutboundThread implements Runnable {
                 while (rs.next()) {
                     DeliveryManager.deliver(rs.getString(1));
 
-                    // Break out of the loop if we are interrupted.
-                    if (Thread.interrupted())
-                        break;
+                    // Exit the thread if we are interrupted.
+                    if (Thread.currentThread().isInterrupted()) {
+                        Log.info("OutboundThread was interrupted during delivery loop.");
+                        return;
+                    }
                 }
             }
             catch (SQLException e) {
@@ -62,7 +64,8 @@ public class OutboundThread implements Runnable {
                 Thread.sleep(60000);
             }
             catch (InterruptedException e) {
-                Log.info("OutboundThread interrupted.");
+                Log.info("OutboundThread interrupted while sleeping.");
+                return;
             }
         }
     }

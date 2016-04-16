@@ -210,12 +210,12 @@ public class InboundServlet extends HttpServlet {
         try {
             // Activate node in the database.
             conn = DatabaseManager.getConnection();
-            pstmt = conn.prepareStatement("update ah_downstream set status = 1 where uuid = ?");
+            pstmt = conn.prepareStatement("update ah_nodes set status = 1 where uuid = ?");
             pstmt.setString(1, uuid);
             pstmt.executeUpdate();
 
             // Activate node in downstreamNodes map.
-            activateNode((TreeMap)request.getServletContext().getAttribute("downstreamNodes"), uuid);
+            activateNode((TreeMap)request.getServletContext().getAttribute("nodes"), uuid);
         }
         catch (SQLException e) {
             Log.error(e.getMessage(), e);
@@ -225,11 +225,11 @@ public class InboundServlet extends HttpServlet {
         }
     }
 
-    void activateNode(TreeMap downstreamNodes, String uuid) {
-        Set<String> keys = downstreamNodes.keySet();
+    void activateNode(TreeMap nodes, String uuid) {
+        Set<String> keys = nodes.keySet();
         for (String key : keys) {
             if (key.equals(uuid)) {
-                HashMap m = (HashMap) downstreamNodes.get(key);
+                HashMap m = (HashMap) nodes.get(key);
                 m.put("status", "1");
                 return;
             }
