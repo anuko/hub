@@ -2,6 +2,7 @@ package com.anuko.servlets;
 
 import com.anuko.utils.DatabaseManager;
 import com.anuko.utils.SQLUtil;
+import com.anuko.utils.HubUtil;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
@@ -83,8 +84,8 @@ public class InboundServlet extends HttpServlet {
             conn = DatabaseManager.getConnection();
 
             // Is this message from a downstream node? If so, we need to update its status.
-            if (isDownstream(request, origin) && !isNodeActive(request, origin)) {
-                activateNode(request, origin);
+            if (HubUtil.isDownstream(request, origin) && !HubUtil.isNodeActive(request, origin)) {
+                HubUtil.activateNode(request, origin);
             }
             // Was the message a ping? No further processing for pings.
             if (type == 0)
@@ -113,26 +114,13 @@ public class InboundServlet extends HttpServlet {
 
             Log.info("Processing incomig message: " + uuid + ".");
 
-            // Insert messages in outbound queue for all upstream nodes.
-            TreeMap upstreamNodes = (TreeMap) request.getServletContext().getAttribute("upstreamNodes");
-            Set<String> keys = upstreamNodes.keySet();
+            // Insert messages in outbound queue for all nodes.
+            TreeMap nodes = (TreeMap) request.getServletContext().getAttribute("nodes");
+            Set<String> keys = nodes.keySet();
             for (String key : keys) {
                 pstmt = conn.prepareStatement("insert into ah_outbound " +
                     "(uuid, remote, created_timestamp, next_try_timestamp, message, type, attempts, status) " +
                     "values(?, ?, ?, ?, ?, ?, 0, 0)");
-                pstmt.setString(1, uuid);
-                pstmt.setString(2, key);
-                pstmt.setString(3, created_timestamp);
-                pstmt.setString(4, created_timestamp);
-                pstmt.setString(5, message);
-                pstmt.setInt(6, type);
-                pstmt.executeUpdate();
-            }
-
-            // Insert messages in outbound queue for all downstream nodes.
-            TreeMap downstreamNodes = (TreeMap) request.getServletContext().getAttribute("downstreamNodes");
-            keys = downstreamNodes.keySet();
-            for (String key : keys) {
                 pstmt.setString(1, uuid);
                 pstmt.setString(2, key);
                 pstmt.setString(3, created_timestamp);
@@ -181,61 +169,6 @@ public class InboundServlet extends HttpServlet {
         }
     }
 
-    boolean isDownstream(HttpServletRequest request, String uuid) {
-        TreeMap downstreamNodes = (TreeMap) request.getServletContext().getAttribute("downstreamNodes");
-        Set<String> keys = downstreamNodes.keySet();
-        for (String key : keys) {
-            if (key.equals(uuid))
-                return true;
-        }
-        return false;
-    }
-
-    boolean isNodeActive(HttpServletRequest request, String uuid) {
-        TreeMap downstreamNodes = (TreeMap) request.getServletContext().getAttribute("downstreamNodes");
-        HashMap<String, String> map = (HashMap) downstreamNodes.get(uuid);
-        String status = map.get("status");
-        if (status != null && status.equals("1")) {
-            return true;
-        }
-        return false;
-    }
-
-    void activateNode(HttpServletRequest request, String uuid) {
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            // Activate node in the database.
-            conn = DatabaseManager.getConnection();
-            pstmt = conn.prepareStatement("update ah_nodes set status = 1 where uuid = ?");
-            pstmt.setString(1, uuid);
-            pstmt.executeUpdate();
-
-            // Activate node in downstreamNodes map.
-            activateNode((TreeMap)request.getServletContext().getAttribute("nodes"), uuid);
-        }
-        catch (SQLException e) {
-            Log.error(e.getMessage(), e);
-        }
-        finally {
-            DatabaseManager.closeConnection(rs, pstmt, conn);
-        }
-    }
-
-    void activateNode(TreeMap nodes, String uuid) {
-        Set<String> keys = nodes.keySet();
-        for (String key : keys) {
-            if (key.equals(uuid)) {
-                HashMap m = (HashMap) nodes.get(key);
-                m.put("status", "1");
-                return;
-            }
-        }
-    }
-
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.
@@ -274,5 +207,4 @@ public class InboundServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
-
 }

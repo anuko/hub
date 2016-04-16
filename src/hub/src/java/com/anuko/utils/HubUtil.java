@@ -21,10 +21,16 @@ may be combined with.
 
 package com.anuko.utils;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -32,7 +38,9 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class HubUtil {
 
-    boolean isDownstream(HttpServletRequest request, String uuid) {
+    private static final Logger Log = LoggerFactory.getLogger(HubUtil.class);
+
+    public static boolean isDownstream(HttpServletRequest request, String uuid) {
         TreeMap nodes = (TreeMap) request.getServletContext().getAttribute("nodes");
         Set<String> keys = nodes.keySet();
         for (String key : keys) {
@@ -44,5 +52,83 @@ public class HubUtil {
             }
         }
         return false;
+    }
+
+    public static boolean isNodeActive(HttpServletRequest request, String uuid) {
+        TreeMap nodes = (TreeMap) request.getServletContext().getAttribute("nodes");
+        HashMap<String, String> map = (HashMap) nodes.get(uuid);
+        String status = map.get("status");
+        if (status != null && status.equals("1")) {
+            return true;
+        }
+        return false;
+    }
+
+    public static void activateNode(HttpServletRequest request, String uuid) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // Activate node in the database.
+            conn = DatabaseManager.getConnection();
+            pstmt = conn.prepareStatement("update ah_nodes set status = 1 where uuid = ?");
+            pstmt.setString(1, uuid);
+            pstmt.executeUpdate();
+
+            // Activate node in nodes map.
+            activateNode((TreeMap)request.getServletContext().getAttribute("nodes"), uuid);
+        }
+        catch (SQLException e) {
+            Log.error(e.getMessage(), e);
+        }
+        finally {
+            DatabaseManager.closeConnection(rs, pstmt, conn);
+        }
+    }
+
+    public static void activateNode(TreeMap nodes, String uuid) {
+        Set<String> keys = nodes.keySet();
+        for (String key : keys) {
+            if (key.equals(uuid)) {
+                HashMap m = (HashMap) nodes.get(key);
+                m.put("status", "1");
+                return;
+            }
+        }
+    }
+
+    public static void deactivateNode(HttpServletRequest request, String uuid) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // Activate node in the database.
+            conn = DatabaseManager.getConnection();
+            pstmt = conn.prepareStatement("update ah_nodes set status = 0 where uuid = ?");
+            pstmt.setString(1, uuid);
+            pstmt.executeUpdate();
+
+            // Deactivate node in nodes map.
+            deactivateNode((TreeMap)request.getServletContext().getAttribute("nodes"), uuid);
+        }
+        catch (SQLException e) {
+            Log.error(e.getMessage(), e);
+        }
+        finally {
+            DatabaseManager.closeConnection(rs, pstmt, conn);
+        }
+    }
+
+    public static void deactivateNode(TreeMap nodes, String uuid) {
+        Set<String> keys = nodes.keySet();
+        for (String key : keys) {
+            if (key.equals(uuid)) {
+                HashMap m = (HashMap) nodes.get(key);
+                m.put("status", "0");
+                return;
+            }
+        }
     }
 }

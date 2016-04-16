@@ -194,7 +194,13 @@ Log.error("............................. next_try_timestamp is: " + next_try_tim
             // If we ultimately failed posting to a downstream node, deactivate it.
             if (!postSuccessful && attemptNum > 4) {
                 // Was it a downstream node?
+                // if (HubUtil.isDownstream(request, uuid)...
                 // TODO: add code here...
+                // Deactivation requires a request object for access to the nodes map.
+                // Think how to design this nicely to keep things simple.
+
+                // Redo this by having context stored in a static varibale of HubListener,
+                // then we won't need the request parameter in many functions.
             }
         }
         catch (SQLException e) {
