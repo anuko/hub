@@ -207,7 +207,6 @@ Log.error("............................. next_try_timestamp is: " + next_try_tim
             Log.error(e.getMessage(), e);
         }
         finally {
-Log.error("........................ closing db connection in handlePostResult............");
             DatabaseManager.closeConnection(rs, pstmt, conn);
         }
     }

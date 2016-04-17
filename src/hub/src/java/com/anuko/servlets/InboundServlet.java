@@ -84,8 +84,8 @@ public class InboundServlet extends HttpServlet {
             conn = DatabaseManager.getConnection();
 
             // Is this message from a downstream node? If so, we need to update its status.
-            if (HubUtil.isDownstream(request, origin) && !HubUtil.isNodeActive(request, origin)) {
-                HubUtil.activateNode(request, origin);
+            if (HubUtil.isDownstream(origin) && !HubUtil.isNodeActive(origin)) {
+                HubUtil.activateNode(origin);
             }
             // Was the message a ping? No further processing for pings.
             if (type == 0)

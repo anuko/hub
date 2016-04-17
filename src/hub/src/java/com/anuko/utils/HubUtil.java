@@ -32,6 +32,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.anuko.servlets.HubListener;
+
 /**
  *
  * @author nik
@@ -40,8 +42,8 @@ public class HubUtil {
 
     private static final Logger Log = LoggerFactory.getLogger(HubUtil.class);
 
-    public static boolean isDownstream(HttpServletRequest request, String uuid) {
-        TreeMap nodes = (TreeMap) request.getServletContext().getAttribute("nodes");
+    public static boolean isDownstream(String uuid) {
+        TreeMap nodes = (TreeMap) HubListener.getServletContext().getAttribute("nodes");
         Set<String> keys = nodes.keySet();
         for (String key : keys) {
             if (key.equals(uuid)) {
@@ -54,8 +56,8 @@ public class HubUtil {
         return false;
     }
 
-    public static boolean isNodeActive(HttpServletRequest request, String uuid) {
-        TreeMap nodes = (TreeMap) request.getServletContext().getAttribute("nodes");
+    public static boolean isNodeActive(String uuid) {
+        TreeMap nodes = (TreeMap) HubListener.getServletContext().getAttribute("nodes");
         HashMap<String, String> map = (HashMap) nodes.get(uuid);
         String status = map.get("status");
         if (status != null && status.equals("1")) {
@@ -64,7 +66,7 @@ public class HubUtil {
         return false;
     }
 
-    public static void activateNode(HttpServletRequest request, String uuid) {
+    public static void activateNode(String uuid) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -77,7 +79,7 @@ public class HubUtil {
             pstmt.executeUpdate();
 
             // Activate node in nodes map.
-            activateNode((TreeMap)request.getServletContext().getAttribute("nodes"), uuid);
+            activateNode((TreeMap)HubListener.getServletContext().getAttribute("nodes"), uuid);
         }
         catch (SQLException e) {
             Log.error(e.getMessage(), e);
@@ -98,7 +100,7 @@ public class HubUtil {
         }
     }
 
-    public static void deactivateNode(HttpServletRequest request, String uuid) {
+    public static void deactivateNode(String uuid) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -111,7 +113,7 @@ public class HubUtil {
             pstmt.executeUpdate();
 
             // Deactivate node in nodes map.
-            deactivateNode((TreeMap)request.getServletContext().getAttribute("nodes"), uuid);
+            deactivateNode((TreeMap)HubListener.getServletContext().getAttribute("nodes"), uuid);
         }
         catch (SQLException e) {
             Log.error(e.getMessage(), e);

@@ -33,7 +33,7 @@ import java.util.Date;
 public class HubListener implements ServletContextListener {
 
     private static final Logger Log = LoggerFactory.getLogger(HubListener.class);
-    ServletContext context;
+    private static ServletContext context;
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     Thread outboundThread = new Thread(new OutboundThread());
 
@@ -50,6 +50,8 @@ public class HubListener implements ServletContextListener {
         //   1) Read nodes info.
         //   2) Put it into application servlet context for further use.
         //   3) Insert messages into outgoing queue to ping upstream nodes.
+
+        context = sce.getServletContext();
 
         // Read nodes info.
         Map nodes = new TreeMap();
@@ -68,7 +70,7 @@ public class HubListener implements ServletContextListener {
                 nodes.put(rs.getString(1), map);
             }
             // Add the map to the application context.
-            sce.getServletContext().setAttribute("nodes", nodes);
+             context.setAttribute("nodes", nodes);
 
             // Insert messages into outgoing queue to ping upstream nodes.
             Set<String> keys = nodes.keySet();
@@ -118,5 +120,14 @@ public class HubListener implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         outboundThread.interrupt();
+        context = null;
+    }
+
+    /**
+     * Returns application servlet context.
+     * Intended use is for other areas of the application that are not aware of it.
+     */
+    public static ServletContext getServletContext() {
+        return context;
     }
 }
