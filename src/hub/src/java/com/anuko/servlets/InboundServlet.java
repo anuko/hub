@@ -114,10 +114,13 @@ public class InboundServlet extends HttpServlet {
 
             Log.info("Processing incomig message: " + uuid + ".");
 
-            // Insert messages in outbound queue for all nodes.
+            // Insert messages in outbound queue for all active nodes.
             TreeMap nodes = (TreeMap) request.getServletContext().getAttribute("nodes");
             Set<String> keys = nodes.keySet();
             for (String key : keys) {
+                if (!HubUtil.isNodeActive(key))
+                    continue;
+
                 pstmt = conn.prepareStatement("insert into ah_outbound " +
                     "(uuid, remote, created_timestamp, next_try_timestamp, message, type, attempts, status) " +
                     "values(?, ?, ?, ?, ?, ?, 0, 0)");
